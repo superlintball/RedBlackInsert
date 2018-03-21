@@ -120,6 +120,7 @@ void visualize(Node* head, int depth=0)
 		cout << "\t";
     }
 
+	//print out number in node followed by its color
     cout << head->num;
 	if(head->color == RED)
 	{
@@ -168,14 +169,19 @@ void recursiveAdd(Node* head, Node* toAdd)
     }
 }
 
+//rearranges the red-black tree so it adheres to the rules
 void repairAdd(Node* n)
 {
+	//if node is the root, make sure it's black
 	if(!parent(n))
 	{
 		n->color = BLACK;
 	}
+	//because all new nodes are automatically internal and you can't have four in a node,
+	//check if the parent is red as well. If it is black, there's nothing to worry about
 	else if(parent(n)->color == RED)
 	{
+		//if the parent is red and its sibling is red, split the node and pop out the middle
 		if(uncle(n) && uncle(n)->color == RED)
 		{
 			uncle(n)->color = BLACK;
@@ -183,6 +189,8 @@ void repairAdd(Node* n)
 			grandparent(n)->color = RED;
 			repairAdd(grandparent(n));
 		}
+		//if the parent is red but its sibling is black,
+		//then the node is shaped weird so rearrange it
 		else
 		{
 			if(grandparent(n)->left && n == grandparent(n)->left->right)
@@ -206,13 +214,17 @@ void repairAdd(Node* n)
 	}
 }
 
+//adds a node to the tree
 Node* add(Node* head, int toAdd)
 {
+	//first add the node where it should go in a regular binary tree
 	Node* n = new Node(toAdd);
 	recursiveAdd(head, n);
 	
+	//now rearrange the tree to even it out
 	repairAdd(n);
 	
+	//return the head in case it changed
 	head = n;
 	while(parent(head))
 		head = parent(head);
