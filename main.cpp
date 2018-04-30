@@ -11,6 +11,9 @@ using namespace std;
 
 const bool RED = true;
 const bool BLACK = false;
+const int ROOT = 0;
+const int LEFT = 1;
+const int RIGHT = 2;
 
 //creates a node object with a number, a left node, and a right node
 struct Node
@@ -108,63 +111,58 @@ void rotateRight(Node* n)
 	}
 }
 
-//thanks to myself for writing the visualize code in shunting yard
 //print out the tree in a sideways form
-void visualize(Node* head, int depth=0)
+void visualize(Node* root, int depth=0)
 {
-    if(head->right)
-		visualize(head->right, depth+1);
+    if(root->right)
+	visualize(root->right, depth+1);
 
     for(int i = 0; i < depth; i++)
     {
 		cout << "\t";
     }
 
-	//print out number in node followed by its color
-    cout << head->num;
-	if(head->color == RED)
-	{
-		cout << "R\n";
-	}
-	else
-	{
-		cout << "B\n";
-	}
+    //print out number in node followed by its color
+    cout << root->num;
+    if(root->color == RED)
+    	cout << "R\n";
+    else
+    	cout << "B\n";
 
-    if(head->left)
-		visualize(head->left, depth+1);
+    if(root->left)
+		visualize(root->left, depth+1);
 }
 
 //adds an integer to the binary tree recursively
-void recursiveAdd(Node* head, Node* toAdd)
+void recursiveAdd(Node* root, Node* toAdd)
 {
     //if the integer being added is greater than the current node go right
-	if(toAdd->num > head->num)
-	{
+    if(toAdd->num > root->num)
+    {
 		//if there is already a node to the right, go right
-		if(head->right)
+		if(root->right)
 		{
-			recursiveAdd(head->right, toAdd);
+			recursiveAdd(root->right, toAdd);
 		}
 		//if there is not a node to the right, create a new one containing the integer
 		else
 		{
-			head->right = toAdd;
-			toAdd->parent = head;
+			root->right = toAdd;
+			toAdd->parent = root;
 		}
-	}
-	//otherwise go left
-	else
-	{
+    }
+    //otherwise go left
+    else
+    {
 		//if the left node exists, go there, otherwise make a new left
-		if(head->left)
+		if(root->left)
 		{
-			recursiveAdd(head->left, toAdd);
+			recursiveAdd(root->left, toAdd);
 		}
 		else
 		{
-			head->left = toAdd;
-			toAdd->parent = head;
+			root->left = toAdd;
+			toAdd->parent = root;
 		}
     }
 }
@@ -172,15 +170,15 @@ void recursiveAdd(Node* head, Node* toAdd)
 //rearranges the red-black tree so it adheres to the rules
 void repairAdd(Node* n)
 {
-	//if node is the root, make sure it's black
-	if(!parent(n))
-	{
-		n->color = BLACK;
-	}
-	//because all new nodes are automatically internal and you can't have four in a node,
-	//check if the parent is red as well. If it is black, there's nothing to worry about
-	else if(parent(n)->color == RED)
-	{
+    //if node is the root, make sure it's black
+    if(!parent(n))
+    {
+    	n->color = BLACK;
+    }
+    //because all new nodes are automatically internal and you can't have four in a node,
+    //check if the parent is red as well. If it is black, there's nothing to worry about
+    else if(parent(n)->color == RED)
+    {
 		//if the parent is red and its sibling is red, split the node and pop out the middle
 		if(uncle(n) && uncle(n)->color == RED)
 		{
@@ -203,7 +201,7 @@ void repairAdd(Node* n)
 				rotateRight(parent(n));
 				n = n->right;
 			}
-			
+				
 			grandparent(n)->color = RED;
 			parent(n)->color = BLACK;
 			if(parent(n)->left == n)
@@ -211,35 +209,34 @@ void repairAdd(Node* n)
 			else
 				rotateLeft(grandparent(n));
 		}
-	}
+    }
 }
 
 //adds a node to the tree
-Node* add(Node* head, int toAdd)
+Node* add(Node* root, int toAdd)
 {
-	//first add the node where it should go in a regular binary tree
-	Node* n = new Node(toAdd);
-	recursiveAdd(head, n);
-	
-	//now rearrange the tree to even it out
-	repairAdd(n);
-	
-	//return the head in case it changed
-	head = n;
-	while(parent(head))
-		head = parent(head);
-	return head;
+    //first add the node where it should go in a regular binary tree
+    Node* n = new Node(toAdd);
+    recursiveAdd(root, n);
+    //now rearrange the tree to even it out
+    repairAdd(n);
+    
+    //return the root in case it changed
+    root = n;
+    while(parent(root))
+    	root = parent(root);
+    return root;
 }
 
 //recursively finds a number in the tree, and returns the node above it
-Node* find(Node* head, int toRemove, Node* prev = NULL)
+Node* find(Node* root, int toRemove)
 {
     //if the number being looked for is greater than the current, go right
-    if(toRemove > head->num)
+    if(toRemove > root->num)
     {
-		if(head->right)
+		if(root->right)
 		{
-			return find(head->right, toRemove, head);
+			return find(root->right, toRemove);
 		}
 		//if there is no node to the right, return NULL indicating the number is not in the tree
 		else
@@ -248,16 +245,16 @@ Node* find(Node* head, int toRemove, Node* prev = NULL)
 		}
     }
     //when the number is found, return the node above it
-    else if(toRemove == head->num)
+    else if(toRemove == root->num)
     {
-		return prev;
+		return root;
     }
     //if the number being looked for is less than the current, go left
-    else if(toRemove < head->num)
+    else if(toRemove < root->num)
     {
-		if(head->left)
+		if(root->left)
 		{
-			return find(head->left, toRemove, head);
+			return find(root->left, toRemove);
 		}
 		//if there is no node to the left, return NULL indicating the number is not in the tree
 		else 
@@ -268,103 +265,84 @@ Node* find(Node* head, int toRemove, Node* prev = NULL)
 }
 
 //removes a number from the tree
-void remove(Node* head, int toRemove)
+void remove(Node* root, int toRemove)
 {
-    //the find function returns NULL if the number being removed is in the head, as there is no node above it
-    //thus, first check if the head contains the number
-    if(toRemove == head->num)
+    Node* toRem = find(root, toRemove);
+    //if the number was found
+    if(toRem)
     {
-		//if there is no left or right, the tree is empty
-		if(!head->left && !head->right)
-		{
-			head->num = 0;
-			cout << "The tree is now empty.\n";
-		}
-		//if there is a right but not a left, move the right node up to the head position
-		else if(!head->left && head->right)
-		{
-			Node* temp = head->right;
-			head->num = temp->num;
-			head->right = temp->right;
-			head->left = temp->left;
-			delete temp;
-		}
-		//if there is a left but not a right, move the left node up to the head position
-		else if(head->left && !head->right)
-		{
-			Node* temp = head->left;
-			head->num = temp->num;
-			head->right = temp->right;
-			head->left = temp->left;
-			delete temp;
-		}
-		//if both exist
-		else
+		//if the number to be removed has two children
+		if(toRem->left && toRem->right)
 		{
 			//find the next smallest number
-			Node* replace = head->left;
-			Node* upReplace = head;
+			Node* replace = toRem->left;
 			while(replace->right)
-			{
-				upReplace = replace;
 				replace = replace->right;
-			}
 
-			//remove the next smallest number from the tree
-			if(upReplace == head)
-				upReplace->left = replace->left;
-			else
-				upReplace->right = replace->left;
-
-			//replace the head with its next smallest number
-			head->num = replace->num;
-			delete replace;
+			//replace the node with the next smallest number
+			toRem->num = replace->num;
+			toRem = replace;
 		}
-		//exit the remove function
-		return;
-    }
-
-    //now, the find function is run
-    Node* above = find(head, toRemove);
-    //if the number was found
-    if(above)
-    {
-		//store the node being removed and what side of "above" it is on
-		Node* temp = NULL;
-
-		//left will be true and right will be false
-		bool side = true;
-		if(toRemove > above->num)
+		
+		//store which side of its parent the node is on
+		int side = ROOT;
+		if(parent(toRem))
+			side = (parent(toRem)->right == toRem) ? RIGHT : LEFT;
+		
+		if(toRem->color == RED)
 		{
-			temp = above->right;
-			side = false;
+			if(side == RIGHT)
+				parent(toRem)->right = NULL;
+			else if(side == LEFT)
+				parent(toRem)->left = NULL;
+			
+			delete toRem;
 		}
-		else
+		else if(toRem->left && toRem->left->color == RED)
 		{
-			temp = above->left;
+			
 		}
-
+		
+		/*
 		//if there is no left or right, make the above node point to NULL where the node was
-		if(!temp->right && !temp->left)
+		if(!toRem->right && !toRem->left)
 		{
-			if(side)
-				above->left = NULL;
-			else
-				above->right = NULL;
-
-			//delete the node
-			delete temp;
+			if(side == ROOT)
+			{
+				toRem->num = 0;
+				cout << "The tree is now empty.\n";
+			4}
+			else if(side == LEFT)
+			{
+				parent(toRem)->left = NULL;
+				delete toRem;
+			}
+			else if(side == RIGHT)
+			{
+				parent(toRem)->right = NULL;
+				delete toRem;
+			}
 		}
 		//if the node has a left but not a right, move the left-side branch up to the node's spot
-		else if(!temp->right && temp->left)
+		else if(!toRem->right && toRem->left)
 		{
-			if(side)
-				above->left = temp->left;
-			else
+			if(side == ROOT)
+			{
+				Node* temp = toRem->left;
+				toRem->num = temp->num;
+				toRem->left = temp->left;
+				toRem->right = temp->right;
+				delete temp;
+			}
+			else if(side == LEFT)
+			{
+				parent(toRem)->left = toRem->left;
+				delete toRem;
+			}
+			else if(side == RIGHT)
+			{
+				parent(toRem)->right = toRem->left;
 				above->right = temp->left;
-
-			//delete the node
-			delete temp;
 		}
 		//if the node has a right but not a left, move the right-side branch up to the node's spot
 		else if(temp->right && !temp->left)
@@ -378,27 +356,7 @@ void remove(Node* head, int toRemove)
 			delete temp;
 		}
 		//if the node has both a right and a left
-		else
-		{
-			//find the next smallest number
-			Node* replace = temp->left;
-			Node* upReplace = temp;
-			while(replace->right)
-			{
-				upReplace = replace;
-				replace = replace->right;
-			}
-
-			//remove the next smallest number from its position in the tree
-			if(upReplace == temp)
-				upReplace->left = replace->left;
-			else
-				upReplace->right = replace->left;
-
-			//replace the node with the next smallest number
-			temp->num = replace->num;
-			delete replace;
-		}
+		else*/
     }
     //if the number wasn't found, complain
     else
@@ -415,9 +373,7 @@ int main()
 
     while(running)
     {
-		cout << "Would you like to INPUT numbers, ";
-//		cout << "REMOVE numbers, ";
-		cout <<	"PRINT the tree, or QUIT?\n";
+		cout << "Would you like to INPUT numbers, SEARCH for numbers REMOVE numbers, PRINT the tree, or QUIT?\n";
 		//thanks to myself for writing the input code in heap
 		char* input = new char[8];
 		cin >> input;
@@ -479,7 +435,7 @@ int main()
 							int start = i;
 							char* number = new char[5];
 							do number[i-start] = list[i];
-								while(list[++i] != ',' && i < strlen(list));
+							while(list[++i] != ',' && i < strlen(list));
 							number[i-start] = '\0';
 
 							//convert the isolated char pointer into an integer and add it to the tree
@@ -509,9 +465,29 @@ int main()
 				fileFound = false;
 			}
 		}
-/*		else if(!strcmp(input, "REMOVE") || !strcmp(input, "remove"))
+		else if(!strcmp(input, "SEARCH") || !strcmp(input, "search"))
 		{
-			cout << "Hi I'm here\n";
+			//prompt the user for the number to search for
+			cout << "Enter the number you want to search the tree for.\n";
+			cin >> input;
+			int toSearch = atoi(input);
+			cout << endl;
+			
+			//if the tree exists
+			if(tree)
+			{				
+				if(find(tree, toSearch))
+					cout << "That number is in the tree.\n";
+				else
+					cout << "That number is not in the tree.\n";
+			}
+			else
+			{
+				cout << "The tree is empty.\n";
+			}
+		}
+		else if(!strcmp(input, "REMOVE") || !strcmp(input, "remove"))
+		{
 			//if the tree exists
 			if(fileFound)
 			{
@@ -528,8 +504,8 @@ int main()
 					cout << endl;
 
 					//remove the number from the tree
-					remove(tree, toRemove);
-					
+					//remove(tree, toRemove);
+							
 					//if the tree is empty, end
 					if(!tree || tree->num == 0)
 					{
@@ -541,7 +517,7 @@ int main()
 				}
 			}
 		}
-*/		else if(!strcmp(input, "PRINT") || !strcmp(input, "print"))
+		else if(!strcmp(input, "PRINT") || !strcmp(input, "print"))
 		{
 			visualize(tree);
 		}
