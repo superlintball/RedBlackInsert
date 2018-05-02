@@ -67,6 +67,35 @@ Node* uncle(Node* n)
 		return NULL;
 }
 
+//replaces a node with another
+Node* replace(Node* old, Node* replacement)
+{
+	//if the node being replaced is not the root, put it where old was
+	if(parent(old))
+	{
+		replacement->parent = old;
+		
+		if(parent(old)->right == old)
+			parent(old)->right = replacement;
+		
+		else
+			parent(old)->left = replacement;
+		
+		delete old;
+	}
+	//if the node being replaced is the root, change the root's data so it matches the replacement
+	else
+	{
+		old->num = replacement->num;
+		old->left = replacement->left;
+		old->right = replacement->right;
+		old->left->parent = old;
+		old->right->parent = old;
+		
+		delete replacement;
+	}
+}
+
 //rearranges the tree by pivoting to the left at a specific node
 void rotateLeft(Node* n)
 {
@@ -300,7 +329,6 @@ void remove(Node* root, int toRemove)
 		}
 		else if(toRem->left && toRem->left->color == RED)
 		{
-			
 		}
 		
 		/*
