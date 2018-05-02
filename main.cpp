@@ -73,7 +73,7 @@ Node* replace(Node* old, Node* replacement)
 	//if the node being replaced is not the root, put it where old was
 	if(parent(old))
 	{
-		replacement->parent = old;
+		replacement->parent = parent(old);
 		
 		if(parent(old)->right == old)
 			parent(old)->right = replacement;
@@ -293,6 +293,39 @@ Node* find(Node* root, int toRemove)
     }
 }
 
+//removes a node from the tree while maintaining the RBT's structure
+void safeRemove(Node* n, int side)
+{
+	//if the node being removed is the root, it can simply be deleted and we good
+	if(side == ROOT)
+	{
+		n->num = 0;
+	}
+	//n is black & it's not the root, therefore it has to have a sibling
+	else
+	{
+		//if the sibling is red
+		if(sibling(n)->color == RED)
+		{
+			//switch the parent and the sibling's colors
+			sibling(n)->color = BLACK;
+			parent(n)->color = RED;
+			
+			//rotate at the parent, making the sibling the grandparent
+			if(side == RIGHT)
+				rotateRight(parent(n));
+			else
+				rotateLeft(parent(n));
+		}
+		
+		//now the sibling must be black
+		
+		//if the parent, the sibling, and all of the sibling's children are black
+		if(parent(n)->color == BLACK && sibling(n)->color == BLACK
+			&& sibling(n))
+	}
+}
+
 //removes a number from the tree
 void remove(Node* root, int toRemove)
 {
@@ -313,11 +346,15 @@ void remove(Node* root, int toRemove)
 			toRem = replace;
 		}
 		
+		//toRem now has to either have 0 or 1 child
+		
 		//store which side of its parent the node is on
 		int side = ROOT;
 		if(parent(toRem))
 			side = (parent(toRem)->right == toRem) ? RIGHT : LEFT;
 		
+		//if the node to be removed is red, it must either have 0 or 2 children
+		//because toRem can't have 2 children, it has none, which means it can simply be deleted
 		if(toRem->color == RED)
 		{
 			if(side == RIGHT)
@@ -327,64 +364,22 @@ void remove(Node* root, int toRemove)
 			
 			delete toRem;
 		}
-		else if(toRem->left && toRem->left->color == RED)
+		
+		//toRem is therefore black
+		
+		//if it has a child, that child has to be red, so repaint that child to be black and replace it
+		else if(toRem->left || toRem->right)
 		{
+			Node* child = (toRem->right) ? toRem->right : toRem->left;
+			child->color = BLACK;
+			replace(toRem, child);
 		}
 		
-		/*
-		//if there is no left or right, make the above node point to NULL where the node was
-		if(!toRem->right && !toRem->left)
+		//toRem is therefore black with no children, so a separate function is created for this scenario
+		else
 		{
-			if(side == ROOT)
-			{
-				toRem->num = 0;
-				cout << "The tree is now empty.\n";
-			4}
-			else if(side == LEFT)
-			{
-				parent(toRem)->left = NULL;
-				delete toRem;
-			}
-			else if(side == RIGHT)
-			{
-				parent(toRem)->right = NULL;
-				delete toRem;
-			}
+			safeRemove(toRem, side);
 		}
-		//if the node has a left but not a right, move the left-side branch up to the node's spot
-		else if(!toRem->right && toRem->left)
-		{
-			if(side == ROOT)
-			{
-				Node* temp = toRem->left;
-				toRem->num = temp->num;
-				toRem->left = temp->left;
-				toRem->right = temp->right;
-				delete temp;
-			}
-			else if(side == LEFT)
-			{
-				parent(toRem)->left = toRem->left;
-				delete toRem;
-			}
-			else if(side == RIGHT)
-			{
-				parent(toRem)->right = toRem->left;
-				above->right = temp->left;
-		}
-		//if the node has a right but not a left, move the right-side branch up to the node's spot
-		else if(temp->right && !temp->left)
-		{
-			if(side)
-				above->left = temp->right;
-			else
-				above->right = temp->right;
-
-			//delete the node
-			delete temp;
-		}
-		//if the node has both a right and a left
-		else*/
     }
     //if the number wasn't found, complain
     else
@@ -537,6 +532,7 @@ int main()
 					//if the tree is empty, end
 					if(!tree || tree->num == 0)
 					{
+						delete tree;
 						tree = NULL;
 						break;
 					}
