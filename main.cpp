@@ -1,6 +1,8 @@
 /* Author: Raveen Karnik
- * Date: 3-7-18
- * This program creates a binary tree and allows users to remove numbers from it */
+ * Date: 5-4-18
+ * This program creates a self-balancing binary tree and allows users to remove numbers from it 
+ * while still maintaining its balance. The binary tree will have at most twice the number of nodes
+ * on one side as the other no matter what. */
 
 #include <iostream>
 #include <cstring>
@@ -81,6 +83,8 @@ Node* replace(Node* old, Node* replacement)
 		else
 			parent(old)->left = replacement;
 		
+		old->parent = NULL;
+		
 		return old;
 	}
 	//if the node being replaced is the root, change the root's data so it matches the replacement
@@ -89,8 +93,10 @@ Node* replace(Node* old, Node* replacement)
 		old->num = replacement->num;
 		old->left = replacement->left;
 		old->right = replacement->right;
-		old->left->parent = old;
-		old->right->parent = old;
+		if(old->left)
+			old->left->parent = old;
+		if(old->right)
+			old->right->parent = old;
 		
 		return replacement;
 	}
@@ -403,7 +409,7 @@ void safeRemove(Node* n, int side)
 }
 
 //removes a number from the tree
-void remove(Node* root, int toRemove)
+Node* remove(Node* root, int toRemove)
 {
     Node* toRem = find(root, toRemove);
     //if the number was found
@@ -456,7 +462,7 @@ void remove(Node* root, int toRemove)
 		}
 		
 		//if the root is being deleted, special case
-		if(side == ROOT)
+		if(!parent(toRem))
 		{
 			toRem->num = 0;
 			cout << "The tree is now empty.\n";
@@ -464,9 +470,9 @@ void remove(Node* root, int toRemove)
 		//otherwise, just delete it
 		else
 		{
-			if(side == RIGHT)
+			if(side == RIGHT && parent(toRem))
 				parent(toRem)->right = NULL;
-			else
+			else if(side == LEFT && parent(toRem))
 				parent(toRem)->left = NULL;
 			
 			delete toRem;
@@ -478,6 +484,10 @@ void remove(Node* root, int toRemove)
     {
 		cout << "That number is not in the tree.\n";
     }
+	
+    while(parent(root))
+    	root = parent(root);
+    return root;
 }
 
 int main()
@@ -615,21 +625,24 @@ int main()
 					//ask the user for the numbers to delete
 					cout << "Enter numbers to remove one at a time.\nEnter DONE when you are done removing numbers.\n";
 					cin >> input;
-					int toRemove = atoi(input);
-					cout << endl;
-
-					//remove the number from the tree
-					remove(tree, toRemove);
-							
-					//if the tree is empty, end
-					if(!tree || tree->num == 0)
+					if(strcmp(input, "DONE") && strcmp(input, "done"))
 					{
-						delete tree;
-						tree = NULL;
-						break;
+						int toRemove = atoi(input);
+						cout << endl;
+
+						//remove the number from the tree
+						tree = remove(tree, toRemove);
+								
+						//if the tree is empty, end
+						if(!tree || tree->num == 0)
+						{
+							delete tree;
+							tree = NULL;
+							break;
+						}
+						else
+							visualize(tree);
 					}
-					else
-						visualize(tree);
 				}
 			}
 		}
