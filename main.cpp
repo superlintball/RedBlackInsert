@@ -307,7 +307,6 @@ Node* find(Node* root, int toRemove)
 //removes a node from the tree while maintaining the RBT's structure
 void safeRemove(Node* n, int side)
 {
-	cout << "hi I'm here\n";
 
 	//if the node being removed is the root, nothing has to be done
 	if(side != ROOT)
@@ -438,8 +437,6 @@ void remove(Node* root, int toRemove)
 				parent(toRem)->right = NULL;
 			else if(side == LEFT)
 				parent(toRem)->left = NULL;
-			
-			delete toRem;
 		}
 		
 		//toRem is therefore black
