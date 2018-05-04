@@ -81,7 +81,7 @@ Node* replace(Node* old, Node* replacement)
 		else
 			parent(old)->left = replacement;
 		
-		delete old;
+		return old;
 	}
 	//if the node being replaced is the root, change the root's data so it matches the replacement
 	else
@@ -92,8 +92,19 @@ Node* replace(Node* old, Node* replacement)
 		old->left->parent = old;
 		old->right->parent = old;
 		
-		delete replacement;
+		return replacement;
 	}
+}
+
+//returns true if a node is either colored black or if it's a leaf
+bool isBlack(Node* n)
+{
+	if(!n)
+		return true;
+	else if(n->color == BLACK)
+		return true;
+	else
+		return false;
 }
 
 //rearranges the tree by pivoting to the left at a specific node
@@ -206,10 +217,10 @@ void repairAdd(Node* n)
     }
     //because all new nodes are automatically internal and you can't have four in a node,
     //check if the parent is red as well. If it is black, there's nothing to worry about
-    else if(parent(n)->color == RED)
+    else if(!isBlack(parent(n)))
     {
 		//if the parent is red and its sibling is red, split the node and pop out the middle
-		if(uncle(n) && uncle(n)->color == RED)
+		if(uncle(n) && !isBlack(uncle(n)))
 		{
 			uncle(n)->color = BLACK;
 			parent(n)->color = BLACK;
@@ -296,16 +307,15 @@ Node* find(Node* root, int toRemove)
 //removes a node from the tree while maintaining the RBT's structure
 void safeRemove(Node* n, int side)
 {
-	//if the node being removed is the root, it can simply be deleted and we good
-	if(side == ROOT)
+	cout << "hi I'm here\n";
+
+	//if the node being removed is the root, nothing has to be done
+	if(side != ROOT)
 	{
-		n->num = 0;
-	}
-	//n is black & it's not the root, therefore it has to have a sibling
-	else
-	{
+		//n is black & it's not the root, therefore it has to have a sibling
+		
 		//if the sibling is red
-		if(sibling(n)->color == RED)
+		if(!isBlack(sibling(n)))
 		{
 			//switch the parent and the sibling's colors
 			sibling(n)->color = BLACK;
@@ -316,13 +326,80 @@ void safeRemove(Node* n, int side)
 				rotateRight(parent(n));
 			else
 				rotateLeft(parent(n));
+			
+			//now, it is ensured that n's sibling is black while the old sibling, which is where
+			//the parent was, is the same color as the parent, ensuring no properties are broken
 		}
 		
 		//now the sibling must be black
 		
-		//if the parent, the sibling, and all of the sibling's children are black
-		if(parent(n)->color == BLACK && sibling(n)->color == BLACK
-			&& sibling(n))
+		//if the sibling's children are black
+		if(isBlack(sibling(n)->right) && isBlack(sibling(n)->left))
+		{
+			//if the parent is black as well
+			if(isBlack(parent(n)))
+			{
+				//make the sibling red to account for the deletion of n, balancing this subtree
+				sibling(n)->color = RED;
+				
+				//although this section of the tree is now balanced, it is imbalanced with respect
+				//to the rest of the tree, so recursively call the function on n's parent
+				if(!parent(parent(n)))
+					safeRemove(parent(n), ROOT);
+				else if(parent(parent(n))->right == parent(n))
+					safeRemove(parent(n), RIGHT);
+				else
+					safeRemove(parent(n), LEFT);
+				
+				return;
+			}
+			
+			//if the parent is red
+			else
+			{
+				//simply switch the parent and the sibling's color, adding a black to n's path
+				//without changing anything on the sibling's path
+				parent(n)->color = BLACK;
+				sibling(n)->color = RED;
+				
+				return;
+			}
+		}
+		
+		//n's sibling is now guaranteed to have at least one red child
+		
+		//for convenience sake, we want to make sure that the outside child of n's sibling is red
+		//if the inside one is red, swap its color with the sibling and rotate it out
+		if(side == RIGHT && isBlack(sibling(n)->left) && !isBlack(sibling(n)->right))
+		{
+			sibling(n)->right->color = BLACK;
+			sibling(n)->color = RED;
+			rotateLeft(sibling(n));
+		}
+		else if(side == LEFT && isBlack(sibling(n)->right) && !isBlack(sibling(n)->left))
+		{
+			sibling(n)->left->color = BLACK;
+			sibling(n)->color = RED;
+			rotateRight(sibling(n));
+		}
+		
+		//the outside child of n's sibling is now guaranteed to be red
+		
+		//swap the parent and the sibling's colors, paint the red child black, and rotate the parent
+		//over to n's side, effectively adding a black to n's side without changing the count on the
+		//sibling side while simultaneously ensuring the node in the parent's spot is the same color
+		sibling(n)->color = parent(n)->color;
+		parent(n)->color = BLACK;
+		if(side == RIGHT)
+		{
+			sibling(n)->left->color = BLACK;
+			rotateRight(parent(n));
+		}
+		else
+		{
+			sibling(n)->right->color = BLACK;
+			rotateLeft(parent(n));
+		}
 	}
 }
 
@@ -334,7 +411,7 @@ void remove(Node* root, int toRemove)
     if(toRem)
     {
 		//if the number to be removed has two children
-		if(toRem->left && toRem->right)
+		if(toRem->right && toRem->left)
 		{
 			//find the next smallest number
 			Node* replace = toRem->left;
@@ -347,7 +424,7 @@ void remove(Node* root, int toRemove)
 		}
 		
 		//toRem now has to either have 0 or 1 child
-		
+
 		//store which side of its parent the node is on
 		int side = ROOT;
 		if(parent(toRem))
@@ -355,7 +432,7 @@ void remove(Node* root, int toRemove)
 		
 		//if the node to be removed is red, it must either have 0 or 2 children
 		//because toRem can't have 2 children, it has none, which means it can simply be deleted
-		if(toRem->color == RED)
+		if(!isBlack(toRem))
 		{
 			if(side == RIGHT)
 				parent(toRem)->right = NULL;
@@ -368,18 +445,36 @@ void remove(Node* root, int toRemove)
 		//toRem is therefore black
 		
 		//if it has a child, that child has to be red, so repaint that child to be black and replace it
-		else if(toRem->left || toRem->right)
+		else if(toRem->right || toRem->left)
 		{
 			Node* child = (toRem->right) ? toRem->right : toRem->left;
 			child->color = BLACK;
-			replace(toRem, child);
+			toRem = replace(toRem, child);
 		}
-		
+				
 		//toRem is therefore black with no children, so a separate function is created for this scenario
 		else
 		{
 			safeRemove(toRem, side);
 		}
+		
+		//if the root is being deleted, special case
+		if(side == ROOT)
+		{
+			toRem->num = 0;
+			cout << "The tree is now empty.\n";
+		}
+		//otherwise, just delete it
+		else
+		{
+			if(side == RIGHT)
+				parent(toRem)->right = NULL;
+			else
+				parent(toRem)->left = NULL;
+			
+			delete toRem;
+		}
+
     }
     //if the number wasn't found, complain
     else
@@ -527,7 +622,7 @@ int main()
 					cout << endl;
 
 					//remove the number from the tree
-					//remove(tree, toRemove);
+					remove(tree, toRemove);
 							
 					//if the tree is empty, end
 					if(!tree || tree->num == 0)
