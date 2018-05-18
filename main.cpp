@@ -465,7 +465,6 @@ Node* remove(Node* root, int toRemove)
 		if(!parent(toRem))
 		{
 			toRem->num = 0;
-			cout << "The tree is now empty.\n";
 		}
 		//otherwise, just delete it
 		else
