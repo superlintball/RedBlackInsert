@@ -107,10 +107,8 @@ bool isBlack(Node* n)
 {
 	if(!n)
 		return true;
-	else if(n->color == BLACK)
-		return true;
 	else
-		return false;
+		return !n->color;
 }
 
 //rearranges the tree by pivoting to the left at a specific node
